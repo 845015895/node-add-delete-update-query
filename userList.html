@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户列表</title>
+    <script src="./js/jquery-1.8.3.min.js"></script>
+    <style>
+        .userListTb {
+            margin: 0 auto;
+            width: 300px;
+            text-align: center;
+        }
+
+        .addBar {
+            width: 300px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+<table border="1" id="userListTb" class="userListTb">
+    <tr>
+        <th>用户名</th>
+        <th>密码</th>
+        <th>操作</th>
+    </tr>
+</table>
+<div class="addBar">
+    <button class="addBtn" id="addBtn">新增</button>
+    <br>
+    <div class="addContent">
+        用户名：<input type="text" id="newUser"><br>
+        密&nbsp;&nbsp;&nbsp;码：<input type="password" id="newPwd"><br>
+        <button class="submit" id="submit">提交</button>
+    </div>
+
+</div>
+
+
+<script>
+    window.onload = function () {
+        $.ajax({
+            type: "get",
+//            url: "http://localhost:30000/user/list",
+            url: "http://yizicheng.cn:30000/user/list",
+            data: {
+                act: "getUserList"
+            },
+            dataType: "json",
+            success: function (data) {
+                console.log(data);
+                let tdStr = "";
+                for (let i = 0; i < data.length; i++) {
+                    tdStr += ` <tr><td>${data[i].userName}</td><td><input type="text" value="${data[i].password}" disabled>  </td>
+                                <td><button class="deleteBtn" id="${data[i].id}">删除</button> <button class="updateBtn" id="${data[i].id}">修改</button> </td></tr>`
+                }
+
+                $("#userListTb").append(tdStr);
+            },
+            error: function (err) {
+
+            }
+
+        });
+
+
+        $(".deleteBtn").live("click", function () {
+            let id = $(this).attr("id");
+            let link = $(this).parents("tr");
+            $.ajax({
+                type: "delete",
+                url: `http://yizicheng.cn:30000/user/delete?id=${id}`,
+//                url: `http://localhost:30000/user/delete?id=${id}`,
+                success: function (data) {
+                    if (data.ok) {
+                        link.remove();
+                    }
+                },
+                error: function () {
+
+                }
+            })
+        });
+        $(".addContent").hide();
+
+        $(".addBtn").click(function () {
+            $(".addContent").show();
+        });
+
+        $("#submit").click(function () {
+            let newUser = $("#newUser").val();
+            let newPwd = $("#newPwd").val();
+
+            $.ajax({
+                type: "post",
+                url: "http://yizicheng.cn:30000/user/add",
+                data: {
+                    "newUser": newUser,
+                    "newPwd": newPwd
+                },
+                dataType: "json",
+                success: function (data) {
+                    if (data.ok) {
+                        let addContent =  $(".addContent");
+                        addContent.find("input").val("");
+                        addContent.hide();
+
+                        let tdStr = `<tr><td>${newUser}</td><td><input type="text" value="${newPwd}" disabled></td><td><button class="deleteBtn" id="${data.id}">删除</button> <button class="updateBtn" id="${data.id}">修改</button></td></tr>`;
+                        $("#userListTb").append(tdStr);
+                    }
+                },
+                error: function (err) {
+
+                }
+            })
+        });
+
+        $(".updateBtn").live("click",function () {
+            let btnThis = $(this);
+            let text = btnThis.text();
+            let id = btnThis.attr("id");
+            let link = btnThis.parents("tr").find("input");
+            let oldInput = link.val();
+            switch (text){
+                case "修改":
+                    link.removeAttr("disabled");
+                    btnThis.text("保存");
+                    break;
+                case "保存":
+                    let update = link.val();
+                    $.ajax({
+                        type: "post",
+                        url: "http://yizicheng.cn:30000/user/update",
+                        data: {
+                            "id": id,
+                            "update": update
+                        },
+                        dataType: "json",
+                        success: function (data) {
+                            if(data.ok){
+                                link.attr("disabled","disabled");
+                                btnThis.text("修改");
+                            }else{
+                                link.attr("disabled","disabled");
+                                link.val(oldInput);
+                                btnThis.text("修改");
+                            }
+                        },
+                        error: function (err) {
+
+                        }
+                    })
+                    break;
+                default:
+                    break;
+            }
+
+
+
+//            link.css({"color":"red","border":"2px solid red"})
+
+        })
+    }
+</script>
+</body>
+</html>
